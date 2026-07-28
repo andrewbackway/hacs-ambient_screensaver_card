@@ -14,18 +14,26 @@ the full architecture/design plan this card was built from.
 - Fully self-contained — no WallPanel or other dashboard-level dependency.
 - Photo rotation with smooth crossfade transitions.
 - Local media-source folder as the baseline photo source; Immich as an
-  **optional** additional source, accessed entirely through Home Assistant's
-  own `media_source` WebSocket API (no direct browser → Immich calls, so no
-  CORS proxy is required).
+  **optional** additional source, via either of two access methods:
+  - **Media source** (default): through Home Assistant's own `media_source`
+    WebSocket API — no direct browser → Immich calls, so no CORS proxy is
+    required.
+  - **Direct Immich API**: the card calls Immich's REST API directly for
+    full control over *what* photos are shown, via one or more **profiles**
+    (random, album, people/faces, favorites, "on this day" memories,
+    location/trips) that are all merged into one shared random pool. This
+    requires Immich to accept cross-origin requests from your dashboard's
+    origin — see "Immich direct API mode" below.
 - Clock (12-hour, no leading zero), outdoor weather icon + current/high
   temperature, and room temperature, each with configurable entity + fallback
   entity + literal default.
 - Location title and per-photo subtitle (static text, or driven from Immich
-  photo metadata).
+  photo metadata/EXIF — date and city/state/country — in either Immich mode).
 - Burn-in protection: slow periodic pixel-shift of the overlay, night-time
   dimming (via `sun.sun` or a fixed hour window), and idle fade-to-black.
-- Full visual (GUI) configuration editor — no YAML required, though YAML is
-  still fully supported.
+- Full visual (GUI) configuration editor, including a dedicated repeatable
+  list editor for Immich profiles — no YAML required, though YAML is still
+  fully supported.
 
 ## Installation (HACS custom repository)
 
@@ -48,6 +56,42 @@ Copy/symlink `dist/ambient-screensaver-card.js` into
 once as a Lovelace resource (`/local/community/ambient-screensaver-card/ambient-screensaver-card.js`,
 type: JavaScript Module), then hard-refresh the dashboard after each rebuild.
 
+## Immich direct API mode
+
+When `immich_access_mode: api`, the card talks to your Immich server's REST
+API **directly from the browser** (`fetch()`), instead of going through Home
+Assistant's `media_source` proxy. This unlocks the full profile system below,
+but has two consequences you should know about:
+
+1. **CORS**: Immich must accept cross-origin requests from your dashboard's
+   origin. Either enable CORS on Immich/its reverse proxy for that origin, or
+   put Immich behind the same origin as Home Assistant (e.g. a reverse-proxy
+   path like `/immich/` alongside `/`). Without this, the browser will block
+   the requests and the card will log a warning and fall back to the local
+   media folder.
+2. **API key exposure**: `immich_api_key` is stored in plain text inside your
+   dashboard configuration, exactly like any other Lovelace card option.
+   Anyone who can edit your dashboards, or open browser dev tools while
+   viewing them, can read this key. Use an Immich API key scoped to
+   **read-only** access if your Immich version supports scoped keys, and
+   treat it as you would any other credential pasted into a dashboard.
+
+Profiles let you combine multiple Immich filters into one shared random pool
+(e.g. a "Favorites" profile plus an "Album" profile plus a "Person" profile
+all mixed together). Configure them via the visual editor's **Immich
+profiles** section (appears once `media_mode: immich` and
+`immich_access_mode: api` are set), or directly in YAML under
+`immich_profiles:`. Each profile has:
+
+| Field | Applies to | Description |
+|---|---|---|
+| `enabled` | all | temporarily exclude a profile from the pool without deleting it |
+| `type` | all | `random`, `album`, `people`, `favorites`, `memories`, or `location` |
+| `pool_size` | all | max photos this profile contributes to the shared pool |
+| `album_ids` | `album` | Immich album UUIDs (find them in the Immich web UI URL) |
+| `person_ids` | `people` | Immich person UUIDs |
+| `city` / `state` / `country` | `location` | matched against each photo's EXIF location |
+
 ## Configuration
 
 All fields are optional; sensible defaults are used for anything not set.
@@ -58,7 +102,12 @@ below through HA's standard form UI, or set them directly in YAML:
 |---|---|---|
 | `media_mode` | `local` or `immich` | `local` |
 | `local_media_path` | media-source content id for the local photo folder | `media-source://media_source/local/screensaver` |
-| `immich_album_id` | Immich album id (optional) | — |
+| `immich_access_mode` | `media_source` or `api` | `media_source` |
+| `immich_album_id` | Immich album id (media-source mode only) | — |
+| `immich_url` | Immich server URL (api mode) | — |
+| `immich_api_key` | Immich API key (api mode) — see security note above | — |
+| `immich_image_size` | `thumbnail`, `preview`, or `fullsize` (api mode) | `preview` |
+| `immich_profiles` | list of profiles feeding the shared random pool (api mode) — see above | `[]` |
 | `image_fit` | `cover` or `contain` | `cover` |
 | `display_time` | seconds per photo | `30` |
 | `crossfade_time` | seconds for the crossfade | `2` |
