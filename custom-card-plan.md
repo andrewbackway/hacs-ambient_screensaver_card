@@ -10,18 +10,6 @@ Same visual/functional target as before — a Google Nest Hub–style ambient sc
 
 ---
 
-## 2. Why pivot (lessons from the WallPanel attempt)
-
-| Problem hit | Root cause | How a custom card avoids it |
-|---|---|---|
-| "Custom element doesn't exist: wallpanel" | WallPanel is a dashboard-level `wallpanel:` key, not a card — easy to misconfigure | We register one real custom element; standard, well-understood Lovelace resource flow |
-| "Expected an array value... views" | Composing two unrelated systems (dashboard raw config + card config) made the required top-level shape easy to get wrong | A card is just one entry in a normal `views: [...] cards: [...]` list — no special top-level keys |
-| Config key mismatches (`image_fit` vs `image_fit_landscape`, `image_order` vs `media_order`, etc.) | Guessed at WallPanel's large, versioned config surface without the docs in front of us | We define our **own** config schema — no guessing, no upstream API drift |
-| Immich CORS requirement (reverse proxy needed) | WallPanel's Immich support calls the Immich API directly from the browser | Our card fetches media through **HA's own authenticated WebSocket API** (`media_source`), so the browser never talks to Immich directly — no CORS at all |
-| button-card JS-template gymnastics for burn-in/dimming | Squeezing real logic into `[[[ ]]]` template strings inside YAML | Plain TypeScript in the card — real functions, real state, real testability |
-
----
-
 ## 3. Tech stack & repo structure
 
 - **Language:** TypeScript
