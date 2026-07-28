@@ -44,7 +44,7 @@ already be pushed to GitHub with at least one tagged release.
 
 1. In Home Assistant, go to **HACS → Frontend**, click the **⋮** menu (top
    right) → **Custom repositories**.
-2. Paste this repo's GitHub URL (`https://github.com/andrew.backway/hacs-ambient_screensaver_card`),
+2. Paste this repo's GitHub URL (`https://github.com/andrewbackway/hacs-ambient_screensaver_card`),
    set **Category** to **Dashboard**, then **Add**.
 3. Back in **HACS → Frontend**, search for **Ambient Screensaver Card** and
    click **Download**.
