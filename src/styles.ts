@@ -20,8 +20,6 @@ export const styles = css`
     height: 100%;
     overflow: hidden;
     background: #000;
-    --asc-day-opacity: 1;
-    --asc-night-opacity: 0.4;
     --asc-shift-x: 0px;
     --asc-shift-y: 0px;
   }
@@ -138,5 +136,49 @@ export const styles = css`
 
   .black-curtain.visible {
     opacity: 1;
+  }
+
+  .night-clock {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: clamp(6rem, 20vw, 14rem);
+    font-weight: 500;
+    line-height: 1;
+    text-shadow: var(--asc-text-shadow, 0px 2px 12px rgba(0, 0, 0, 0.9));
+  }
+
+  .night-clock-ampm {
+    font-size: 0.3em;
+    margin-left: 0.1em;
+  }
+
+  .debug-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .editor-placeholder {
+    padding: 16px;
+    font-family: var(--primary-font-family, Roboto);
+    font-size: 14px;
+    color: var(--primary-text-color);
+    background: var(--card-background-color, #fff);
+    border-radius: var(--ha-card-border-radius, 4px);
+    box-shadow: var(--ha-card-box-shadow, 0 2px 2px 0 rgba(0, 0, 0, 0.14));
+    margin: 8px;
   }
 `;

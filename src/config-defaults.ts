@@ -6,9 +6,12 @@ import type { AmbientScreensaverCardConfig } from "./types";
  * so every downstream consumer can assume every field is present.
  */
 export const defaultConfig: Required<
-  Omit<AmbientScreensaverCardConfig, "type" | "immich_album_id">
+  Omit<
+    AmbientScreensaverCardConfig,
+    "type" | "immich_album_id" | "brightness_entity"
+  >
 > &
-  Pick<AmbientScreensaverCardConfig, "immich_album_id"> = {
+  Pick<AmbientScreensaverCardConfig, "immich_album_id" | "brightness_entity"> = {
   media_mode: "local",
   local_media_path: "media-source://media_source/local/screensaver",
   immich_album_id: undefined,
@@ -50,11 +53,14 @@ export const defaultConfig: Required<
 
   pixel_shift_distance: 6,
   pixel_shift_period: 60,
-  night_dim_mode: "sun",
-  night_dim_start_hour: 22,
-  night_dim_end_hour: 6,
-  day_opacity: 1,
-  night_opacity: 0.4,
   idle_time: 120,
   idle_black_after: 600,
+
+  night_mode_light_sensor_entity: "sensor.room_light_sensor",
+  night_mode_light_threshold: 0,
+
+  brightness_entity: undefined,
+  brightness_day_default: 100,
+
+  debug: false,
 };

@@ -37,12 +37,36 @@ the full architecture/design plan this card was built from.
 
 ## Installation (HACS custom repository)
 
-1. HACS → Frontend → ⋮ → Custom repositories → add this repository URL.
-2. Install **Ambient Screensaver Card** from HACS.
-3. Add the resulting `ambient-screensaver-card.js` as a Lovelace resource
-   (HACS does this automatically for HACS-managed installs).
-4. Add a card of type `custom:ambient-screensaver-card` to a **panel** view
-   for full-bleed display.
+This card isn't in the default HACS store, so it's installed as a **custom
+repository** pointing at this Git repo. [HACS](https://hacs.xyz/) must
+already be installed in your Home Assistant instance, and this repo must
+already be pushed to GitHub with at least one tagged release.
+
+1. In Home Assistant, go to **HACS → Frontend**, click the **⋮** menu (top
+   right) → **Custom repositories**.
+2. Paste this repo's GitHub URL (`https://github.com/andrew.backway/hacs-ambient_screensaver_card`),
+   set **Category** to **Dashboard**, then **Add**.
+3. Back in **HACS → Frontend**, search for **Ambient Screensaver Card** and
+   click **Download**.
+4. **Add the Lovelace resource** — HACS usually adds this automatically for
+   Dashboard-category repos; if the card doesn't show up as an option when
+   adding a card, add it manually:
+   - **Settings → Dashboards → ⋮ → Resources → + Add Resource**
+   - URL: `/hacsfiles/ambient-screensaver-card/ambient-screensaver-card.js`
+   - Resource type: **JavaScript Module**
+5. **Reload the dashboard** (hard refresh the browser) so the new resource
+   loads.
+6. Add a card of type `custom:ambient-screensaver-card` to a **panel** view
+   for full-bleed display — either via **Add Card → search "Ambient
+   Screensaver"** (uses the visual editor) or directly in YAML:
+   ```yaml
+   type: custom:ambient-screensaver-card
+   ```
+
+### Updating
+
+HACS → Frontend → Ambient Screensaver Card → **Update**, whenever a new
+release is tagged on GitHub.
 
 ## Local development
 
@@ -121,7 +145,14 @@ below through HA's standard form UI, or set them directly in YAML:
 | `clock_font_size`, `weather_font_size`, `room_font_size`, `location_font_size`, `subtitle_font_size` | any valid CSS size, e.g. `clamp()` | see `src/config-defaults.ts` |
 | `text_shadow` | CSS text-shadow value | `0px 2px 12px rgba(0, 0, 0, 0.9)` |
 | `pixel_shift_distance` / `pixel_shift_period` | burn-in pixel-shift amount (px) / period (s) | `6` / `60` |
-| `night_dim_mode` | `sun` or `hours` | `sun` |
-| `night_dim_start_hour` / `night_dim_end_hour` | used when `night_dim_mode: hours` | `22` / `6` |
-| `day_opacity` / `night_opacity` | dimming levels | `1` / `0.4` |
+| `night_mode_light_sensor_entity` | numeric light-level sensor entity; night mode is active while its state is `<=` `night_mode_light_threshold` | `sensor.room_light_sensor` |
+| `night_mode_light_threshold` | night-mode trigger threshold (see above) | `0` |
+| `brightness_entity` | `number.*` entity for the display's real backlight brightness — set to `0` on entering night mode and restored on exit. Left unset to disable real brightness control entirely | — |
+| `brightness_day_default` | fallback brightness value to restore if no previous value was captured before night mode started | `100` |
+| `debug` | show an on-screen diagnostic overlay (night mode/brightness/media/idle/screen-size state) | `false` |
 | `idle_time` / `idle_black_after` | seconds of inactivity before dimming / fading to black | `120` / `600` |
+
+## Interaction
+
+- **Swipe left** anywhere on the screen shows the **previous** photo; **swipe right** shows the **next** photo (skips ahead of the normal rotation timer, which restarts fresh after a manual swipe). Ignored while night mode is active.
+- **Night mode** activates automatically once `night_mode_light_sensor_entity`'s state drops to/below `night_mode_light_threshold` (e.g. a room going dark) — photos and all overlay text/weather/room-temp info are hidden, replaced by a large centered clock only, and (if `brightness_entity` is configured) the real screen brightness is set to `0`. It deactivates automatically once the sensor reports a brighter level again, restoring the previous brightness. There is no manual/gesture override — it is purely sensor-driven.

@@ -157,17 +157,36 @@ const SCHEMA: SchemaEntry[] = [
     schema: [
       { name: "pixel_shift_distance", selector: { number: { mode: "box", unit_of_measurement: "px" } } },
       { name: "pixel_shift_period", selector: { number: { mode: "box", unit_of_measurement: "s" } } },
-      {
-        name: "night_dim_mode",
-        selector: { select: { mode: "dropdown", options: ["sun", "hours"] } },
-      },
-      { name: "night_dim_start_hour", selector: { number: { mode: "box", min: 0, max: 23 } } },
-      { name: "night_dim_end_hour", selector: { number: { mode: "box", min: 0, max: 23 } } },
-      { name: "day_opacity", selector: { number: { mode: "box", min: 0, max: 1, step: 0.05 } } },
-      { name: "night_opacity", selector: { number: { mode: "box", min: 0, max: 1, step: 0.05 } } },
       { name: "idle_time", selector: { number: { mode: "box", unit_of_measurement: "s" } } },
       { name: "idle_black_after", selector: { number: { mode: "box", unit_of_measurement: "s" } } },
     ],
+  },
+  {
+    name: "",
+    type: "expandable",
+    title: "Night mode",
+    flatten: true,
+    schema: [
+      { name: "night_mode_light_sensor_entity", selector: { entity: { domain: "sensor" } } },
+      { name: "night_mode_light_threshold", selector: { number: { mode: "box" } } },
+    ],
+  },
+  {
+    name: "",
+    type: "expandable",
+    title: "Display brightness",
+    flatten: true,
+    schema: [
+      { name: "brightness_entity", selector: { entity: { domain: "number" } } },
+      { name: "brightness_day_default", selector: { number: { mode: "box" } } },
+    ],
+  },
+  {
+    name: "",
+    type: "expandable",
+    title: "Debug",
+    flatten: true,
+    schema: [{ name: "debug", selector: { boolean: {} } }],
   },
 ];
 
@@ -205,13 +224,13 @@ const LABELS: Record<string, string> = {
   text_shadow: "Text shadow (CSS)",
   pixel_shift_distance: "Pixel-shift distance",
   pixel_shift_period: "Pixel-shift period",
-  night_dim_mode: "Night dimming mode",
-  night_dim_start_hour: "Night dimming start hour",
-  night_dim_end_hour: "Night dimming end hour",
-  day_opacity: "Day opacity",
-  night_opacity: "Night opacity",
   idle_time: "Idle time before dimming",
   idle_black_after: "Idle time before fading to black",
+  night_mode_light_sensor_entity: "Night mode light sensor",
+  night_mode_light_threshold: "Night mode threshold (state \u2264 this = night)",
+  brightness_entity: "Screen brightness entity (number.*)",
+  brightness_day_default: "Day brightness fallback",
+  debug: "Show debug overlay",
 };
 
 const PROFILE_TYPE_OPTIONS = [

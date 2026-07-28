@@ -14,9 +14,6 @@ export type MediaMode = "local" | "immich";
  */
 export type ImmichAccessMode = "media_source" | "api";
 
-/** Night-dimming trigger strategy. */
-export type NightDimMode = "sun" | "hours";
-
 /** One filter combination contributing photos into the shared random pool. */
 export type ImmichProfileType =
   | "random"
@@ -96,11 +93,17 @@ export interface AmbientScreensaverCardConfig extends LovelaceCardConfig {
   // --- Burn-in protection -------------------------------------------------
   pixel_shift_distance?: number; // px
   pixel_shift_period?: number; // seconds
-  night_dim_mode?: NightDimMode;
-  night_dim_start_hour?: number; // 0-23, used when night_dim_mode === "hours"
-  night_dim_end_hour?: number; // 0-23, used when night_dim_mode === "hours"
-  day_opacity?: number; // 0-1
-  night_opacity?: number; // 0-1
   idle_time?: number; // seconds of no interaction before dimming
   idle_black_after?: number; // seconds of no interaction before fading to black
+
+  // --- Night mode -----------------------------------------------------------
+  night_mode_light_sensor_entity?: string; // numeric light-level sensor entity
+  night_mode_light_threshold?: number; // night mode active while state <= this
+
+  // --- Real screen brightness ------------------------------------------------
+  brightness_entity?: string; // number.* entity for the display's backlight
+  brightness_day_default?: number; // fallback restore value if no previous brightness is known
+
+  // --- Debug -----------------------------------------------------------------
+  debug?: boolean; // shows an on-screen diagnostic overlay
 }

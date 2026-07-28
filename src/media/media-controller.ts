@@ -111,13 +111,12 @@ export class MediaController {
 
   private _trackBlobUrl(url: string): void {
     if (!url.startsWith("blob:")) return;
+    // Don't eagerly revoke here - the card keeps its own bounded photo
+    // history (for swipe-back "previous" navigation) that may still
+    // reference an older blob URL. Everything is revoked together in
+    // dispose(), and the card also revokes individual blob URLs itself
+    // when it evicts an item from its history cap.
     this.recentBlobUrls.push(url);
-    // Keep the currently-visible and about-to-be-replaced layer's URLs
-    // alive; revoke anything older than that.
-    while (this.recentBlobUrls.length > 2) {
-      const stale = this.recentBlobUrls.shift();
-      if (stale) URL.revokeObjectURL(stale);
-    }
   }
 
   private _immichSettings(): ImmichApiSettings {
