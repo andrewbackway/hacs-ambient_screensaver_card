@@ -64,16 +64,10 @@ export interface AmbientScreensaverCardConfig extends LovelaceCardConfig {
   // --- Outdoor weather --------------------------------------------------
   weather_entity?: string;
   outdoor_temp_entity?: string;
-  outdoor_temp_fallback_entity?: string;
-  outdoor_temp_default?: number;
   outdoor_high_entity?: string;
-  outdoor_high_fallback_entity?: string;
-  outdoor_high_default?: number;
 
   // --- Room temp ------------------------------------------------------------
   room_temp_entity?: string;
-  room_temp_climate_entity?: string;
-  room_temp_default?: number;
   room_label?: string;
   room_unit?: string;
 

@@ -426,16 +426,20 @@ export class AmbientScreensaverCard extends LitElement {
               ${this._clock.ampm}</span
             >
           </div>
-          <div class="weather-row">
-            <ha-icon icon=${weather.icon}></ha-icon>
-            <span
-              >${Math.round(weather.outdoorTemp)}° /
-              ${Math.round(weather.outdoorHigh)}°</span
-            >
-          </div>
-          <div class="room-row">
-            ${room.label}: ${room.temp}${room.unit}
-          </div>
+          ${weather
+            ? html`<div class="weather-row">
+                <ha-icon icon=${weather.icon}></ha-icon>
+                <span
+                  >${Math.round(weather.outdoorTemp)}° /
+                  ${Math.round(weather.outdoorHigh)}°</span
+                >
+              </div>`
+            : nothing}
+          ${room
+            ? html`<div class="room-row">
+                ${room.label}: ${Math.round(room.temp)}${room.unit}
+              </div>`
+            : nothing}
         </div>
         <div class="bottom-right">
           <div class="location">${location.location}</div>

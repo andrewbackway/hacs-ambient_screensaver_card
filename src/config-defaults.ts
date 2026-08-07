@@ -28,15 +28,9 @@ export const defaultConfig: Required<
 
   weather_entity: "weather.home",
   outdoor_temp_entity: "sensor.laverton_temp",
-  outdoor_temp_fallback_entity: "sensor.outdoor_temperature",
-  outdoor_temp_default: 22,
   outdoor_high_entity: "sensor.laverton_temp_max",
-  outdoor_high_fallback_entity: "sensor.outdoor_high_temperature",
-  outdoor_high_default: 26,
 
   room_temp_entity: "sensor.office_temperature",
-  room_temp_climate_entity: "climate.daikin_dup_office",
-  room_temp_default: 21.5,
   room_label: "Office",
   room_unit: "°C",
 
@@ -57,7 +51,7 @@ export const defaultConfig: Required<
   idle_black_after: 600,
 
   night_mode_light_sensor_entity: "sensor.room_light_sensor",
-  night_mode_light_threshold: 0,
+  night_mode_light_threshold: 10,
 
   brightness_entity: undefined,
   brightness_day_default: 100,

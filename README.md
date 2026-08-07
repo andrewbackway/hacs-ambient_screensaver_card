@@ -136,9 +136,8 @@ below through HA's standard form UI, or set them directly in YAML:
 | `display_time` | seconds per photo | `30` |
 | `crossfade_time` | seconds for the crossfade | `2` |
 | `weather_entity` | weather entity for the condition icon | `weather.home` |
-| `outdoor_temp_entity` / `outdoor_temp_fallback_entity` / `outdoor_temp_default` | outdoor temperature fallback chain | `sensor.laverton_temp` / `sensor.outdoor_temperature` / `22` |
-| `outdoor_high_entity` / `outdoor_high_fallback_entity` / `outdoor_high_default` | outdoor high temperature fallback chain | `sensor.laverton_temp_max` / `sensor.outdoor_high_temperature` / `26` |
-| `room_temp_entity` / `room_temp_climate_entity` / `room_temp_default` | room temperature fallback chain | `sensor.office_temperature` / `climate.daikin_dup_office` / `21.5` |
+| `outdoor_temp_entity` / `outdoor_high_entity` | outdoor temperature and high entities; the weather row is hidden if either value is unavailable or invalid | `sensor.laverton_temp` / `sensor.laverton_temp_max` |
+| `room_temp_entity` | room temperature entity; the room row is hidden if the value is unavailable or invalid | `sensor.office_temperature` |
 | `room_label` / `room_unit` | room temperature display label/unit | `Office` / `°C` |
 | `location_source` | `static` or `immich_metadata` | `static` |
 | `location_text` / `subtitle_text` | location/subtitle text | `Home` / `""` |
@@ -146,7 +145,7 @@ below through HA's standard form UI, or set them directly in YAML:
 | `text_shadow` | CSS text-shadow value | `0px 2px 12px rgba(0, 0, 0, 0.9)` |
 | `pixel_shift_distance` / `pixel_shift_period` | burn-in pixel-shift amount (px) / period (s) | `6` / `60` |
 | `night_mode_light_sensor_entity` | numeric light-level sensor entity; night mode is active while its state is `<=` `night_mode_light_threshold` | `sensor.room_light_sensor` |
-| `night_mode_light_threshold` | night-mode trigger threshold (see above) | `0` |
+| `night_mode_light_threshold` | night-mode trigger threshold (see above) | `10` |
 | `brightness_entity` | `number.*` entity for the display's real backlight brightness — set to `0` on entering night mode and restored on exit. Left unset to disable real brightness control entirely | — |
 | `brightness_day_default` | fallback brightness value to restore if no previous value was captured before night mode started | `100` |
 | `debug` | show an on-screen diagnostic overlay (night mode/brightness/media/idle/screen-size state) | `false` |

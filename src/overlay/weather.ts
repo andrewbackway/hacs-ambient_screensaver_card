@@ -1,6 +1,6 @@
 import type { HomeAssistant } from "custom-card-helpers";
 import type { AmbientScreensaverCardConfig } from "../types";
-import { getState, resolveNumeric } from "./entity-fallback";
+import { getState } from "./entity-fallback";
 
 const CONDITION_ICONS: Record<string, string> = {
   "clear-night": "mdi:weather-night",
@@ -31,23 +31,23 @@ export interface WeatherDisplay {
 export function getWeatherDisplay(
   hass: HomeAssistant,
   config: AmbientScreensaverCardConfig
-): WeatherDisplay {
+): WeatherDisplay | undefined {
   const condition = getState(hass, config.weather_entity);
   const icon = (condition && CONDITION_ICONS[condition]) || DEFAULT_ICON;
 
-  const outdoorTemp = resolveNumeric(
-    hass,
-    config.outdoor_temp_entity,
-    config.outdoor_temp_fallback_entity,
-    config.outdoor_temp_default ?? 22
-  );
-
-  const outdoorHigh = resolveNumeric(
-    hass,
-    config.outdoor_high_entity,
-    config.outdoor_high_fallback_entity,
-    config.outdoor_high_default ?? 26
-  );
+  const outdoorTemp = getNumericState(hass, config.outdoor_temp_entity);
+  const outdoorHigh = getNumericState(hass, config.outdoor_high_entity);
+  if (outdoorTemp === undefined || outdoorHigh === undefined) return undefined;
 
   return { icon, outdoorTemp, outdoorHigh };
+}
+
+function getNumericState(
+  hass: HomeAssistant,
+  entityId: string | undefined
+): number | undefined {
+  const value = getState(hass, entityId);
+  if (value === undefined) return undefined;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : undefined;
 }

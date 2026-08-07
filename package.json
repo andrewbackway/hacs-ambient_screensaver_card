@@ -1,6 +1,6 @@
 {
   "name": "ambient-screensaver-card",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A self-contained Home Assistant Lovelace card: full-screen rotating photo ambient screensaver with clock/weather/room-temp overlay and burn-in protection.",
   "license": "MIT",
   "type": "module",
