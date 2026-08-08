@@ -53,7 +53,7 @@ already be pushed to GitHub with at least one tagged release.
    Dashboard-category repos; if the card doesn't show up as an option when
    adding a card, add it manually:
    - **Settings → Dashboards → ⋮ → Resources → + Add Resource**
-   - URL: `/hacsfiles/ambient-screensaver-card/dist/ambient-screensaver-card.js`
+   - URL: `/hacsfiles/ambient-screensaver-card/ambient-screensaver-card.js`
    - Resource type: **JavaScript Module**
 5. **Reload the dashboard** (hard refresh the browser) so the new resource
    loads.
@@ -76,10 +76,10 @@ npm install
 npm run watch
 ```
 
-Copy/symlink `dist/ambient-screensaver-card.js` into
+Copy/symlink `ambient-screensaver-card.js` into
 `/config/www/community/ambient-screensaver-card/` on your HA instance, add it
 once as a Lovelace resource
-(`/local/community/ambient-screensaver-card/dist/ambient-screensaver-card.js`,
+(`/local/community/ambient-screensaver-card/ambient-screensaver-card.js`,
 type: JavaScript Module), then hard-refresh the dashboard after each rebuild.
 
 ## Immich direct API mode
@@ -185,13 +185,13 @@ and dragging. Night mode takes precedence over music mode.
 
 ## HACS deployment
 
-The repository keeps the browser bundle at `dist/ambient-screensaver-card.js`, matching `hacs.json`. For a release:
+The repository publishes the browser bundle as `ambient-screensaver-card.js`, matching `hacs.json`. For a release:
 
 1. Run `npm ci` and `npm run lint`.
-2. Run `npm run build` and confirm `dist/ambient-screensaver-card.js` is regenerated.
+2. Run `npm run build` and confirm `ambient-screensaver-card.js` is regenerated.
 3. Commit the source and `dist/` bundle, then create a Git tag and GitHub release.
 4. HACS installs the release into `/hacsfiles/ambient-screensaver-card/`; add the resource URL below if HACS does not register it automatically:
 
-   `/hacsfiles/ambient-screensaver-card/dist/ambient-screensaver-card.js`
+   `/hacsfiles/ambient-screensaver-card/ambient-screensaver-card.js`
 
 The resource type is **JavaScript Module**. After installation or an update, hard-refresh the Home Assistant dashboard so the browser does not use an older cached bundle.

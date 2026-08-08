@@ -207,7 +207,7 @@ export class AmbientScreensaverCard extends LitElement {
       if (deltaX > 0) {
         this._showPrevious();
       } else {
-        void this._showNext();
+        void this._showNextSafely();
       }
       this._restartRotationTimer();
       return;
@@ -257,7 +257,7 @@ export class AmbientScreensaverCard extends LitElement {
 
     if (this.hass && this._config && !this._media) {
       this._media = new MediaController(this.hass, this._config);
-      void this._startRotation();
+      void this._startRotationSafely();
     }
 
     if (changed.has("hass") && this.hass && this._config) {
@@ -387,7 +387,31 @@ export class AmbientScreensaverCard extends LitElement {
 
   private async _startRotation(): Promise<void> {
     await this._showNext();
+    if (this._isNightMode || this._music) return;
     this._restartRotationTimer();
+  }
+
+  private async _startRotationSafely(): Promise<void> {
+    try {
+      await this._startRotation();
+    } catch (err) {
+      console.warn(
+        "[ambient-screensaver-card] Failed to start photo rotation:",
+        err
+      );
+      if (!this._isNightMode && !this._music) this._restartRotationTimer();
+    }
+  }
+
+  private async _showNextSafely(): Promise<void> {
+    try {
+      await this._showNext();
+    } catch (err) {
+      console.warn(
+        "[ambient-screensaver-card] Failed to advance photo rotation:",
+        err
+      );
+    }
   }
 
   private _restartRotationTimer(): void {
@@ -395,7 +419,7 @@ export class AmbientScreensaverCard extends LitElement {
     const displaySeconds =
       this._config?.display_time ?? defaultConfig.display_time;
     this._rotationTimer = setInterval(
-      () => void this._showNext(),
+      () => void this._showNextSafely(),
       Math.max(1, displaySeconds) * 1000
     );
   }
@@ -655,18 +679,14 @@ export class AmbientScreensaverCard extends LitElement {
     this._stopInteraction(event);
     const entityId = this._config?.music_assistant_player;
     if (!entityId) return;
-    void this.hass.callService("media_player", "media_play_pause", {
-      entity_id: entityId,
-    });
+    void this._callMediaPlayerService("media_play_pause", entityId);
   };
 
   private _nextMusic = (event: Event): void => {
     this._stopInteraction(event);
     const entityId = this._config?.music_assistant_player;
     if (!entityId) return;
-    void this.hass.callService("media_player", "media_next_track", {
-      entity_id: entityId,
-    });
+    void this._callMediaPlayerService("media_next_track", entityId);
   };
 
   private _seekMusic = (event: Event): void => {
@@ -678,11 +698,28 @@ export class AmbientScreensaverCard extends LitElement {
       this._music.durationSeconds,
       Math.max(0, Number(input.value))
     );
-    void this.hass.callService("media_player", "media_seek", {
-      entity_id: entityId,
+    void this._callMediaPlayerService("media_seek", entityId, {
       seek_position: seekPosition,
     });
   };
+
+  private async _callMediaPlayerService(
+    service: string,
+    entityId: string,
+    data: Record<string, number> = {}
+  ): Promise<void> {
+    try {
+      await this.hass.callService("media_player", service, {
+        entity_id: entityId,
+        ...data,
+      });
+    } catch (err) {
+      console.warn(
+        `[ambient-screensaver-card] Failed to call media_player.${service}:`,
+        err
+      );
+    }
+  }
 
   private _renderDebugOverlay() {
     if (!this._config?.debug) return nothing;

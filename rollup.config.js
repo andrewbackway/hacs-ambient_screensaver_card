@@ -7,7 +7,7 @@ const dev = !!process.env.ROLLUP_WATCH;
 export default {
   input: "src/ambient-screensaver-card.ts",
   output: {
-    file: "dist/ambient-screensaver-card.js",
+    file: "ambient-screensaver-card.js",
     format: "es",
     sourcemap: dev,
   },
