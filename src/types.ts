@@ -36,6 +36,16 @@ export interface ImmichProfileConfig {
   country?: string; // used when type === "location"
 }
 
+export interface MusicDisplay {
+  state: "playing" | "paused";
+  title: string;
+  artist: string;
+  album: string;
+  albumArtUrl?: string;
+  durationSeconds: number;
+  positionSeconds: number;
+}
+
 /**
  * Full configuration schema for the ambient-screensaver-card.
  * Every field is optional at the YAML level; sensible defaults live in
@@ -60,6 +70,10 @@ export interface AmbientScreensaverCardConfig extends LovelaceCardConfig {
   // --- Timing ---------------------------------------------------------------
   display_time?: number; // seconds a photo stays on screen
   crossfade_time?: number; // seconds for the crossfade transition
+
+  // --- Music Assistant ------------------------------------------------------
+  music_assistant_player?: string; // Music Assistant-backed media_player.* entity
+  music_assistant_fallback_image?: string; // URL, /local path, or media-source content id
 
   // --- Outdoor weather --------------------------------------------------
   weather_entity?: string;
@@ -93,6 +107,10 @@ export interface AmbientScreensaverCardConfig extends LovelaceCardConfig {
   // --- Night mode -----------------------------------------------------------
   night_mode_light_sensor_entity?: string; // numeric light-level sensor entity
   night_mode_light_threshold?: number; // night mode active while state <= this
+  night_mode_clock_opacity?: number; // percentage from 0 to 100
+
+  // --- Navigation -----------------------------------------------------------
+  tap_navigation_path?: string; // relative HA dashboard/view path, e.g. /lovelace/ambient
 
   // --- Real screen brightness ------------------------------------------------
   brightness_entity?: string; // number.* entity for the display's backlight

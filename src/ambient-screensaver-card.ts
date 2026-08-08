@@ -11,6 +11,9 @@ import { getClockDisplay } from "./overlay/clock";
 import { getWeatherDisplay } from "./overlay/weather";
 import { getRoomTempDisplay } from "./overlay/room-temp";
 import { getLocationDisplay } from "./overlay/location";
+import { getMusicDisplay } from "./media/music-assistant";
+import { resolveMedia } from "./media/media-source";
+import type { MusicDisplay } from "./types";
 import { PixelShiftController } from "./burn-in/pixel-shift";
 import { isNightModeActive } from "./burn-in/night-mode";
 import { IdleController, type IdleState } from "./burn-in/idle-black";
@@ -38,6 +41,8 @@ export class AmbientScreensaverCard extends LitElement {
   @state() private _screenWidth = 0;
   @state() private _screenHeight = 0;
   @state() private _devicePixelRatio = 1;
+  @state() private _music?: MusicDisplay;
+  @state() private _musicFallbackUrl = "";
 
   private _media?: MediaController;
   private _currentItem: ResolvedMediaItem | null = null;
@@ -47,12 +52,16 @@ export class AmbientScreensaverCard extends LitElement {
   private _editorMode = false;
   private _clockTimer?: ReturnType<typeof setInterval>;
   private _rotationTimer?: ReturnType<typeof setInterval>;
+  private _musicTimer?: ReturnType<typeof setInterval>;
+  private _fallbackRequest = 0;
+  private _resolvedFallbackSource = "";
   private readonly _pixelShift = new PixelShiftController();
   private readonly _idle = new IdleController();
 
-  private _touchStartX = 0;
-  private _touchStartY = 0;
-  private _touchStartTime = 0;
+  private _pointerStartX = 0;
+  private _pointerStartY = 0;
+  private _pointerStartTime = 0;
+  private _pointerStartTarget: EventTarget | null = null;
 
   static styles = styles;
 
@@ -73,6 +82,8 @@ export class AmbientScreensaverCard extends LitElement {
     this._config = { ...defaultConfig, ...config };
     this._media?.updateConfig(this._config);
     this._applyHostVariables();
+    void this._resolveMusicFallback();
+    if (this.hass) this._updateMusicState();
   }
 
   public getCardSize(): number {
@@ -107,10 +118,10 @@ export class AmbientScreensaverCard extends LitElement {
 
     this._updateScreenSize();
     window.addEventListener("resize", this._handleResize);
-    this.addEventListener("touchstart", this._handleTouchStart, {
+    this.addEventListener("pointerdown", this._handlePointerDown, {
       passive: true,
     });
-    this.addEventListener("touchend", this._handleTouchEnd, {
+    this.addEventListener("pointerup", this._handlePointerUp, {
       passive: true,
     });
   }
@@ -124,9 +135,10 @@ export class AmbientScreensaverCard extends LitElement {
     this._idle.stop();
     this._pixelShift.stop();
     this._media?.dispose();
+    if (this._musicTimer) clearInterval(this._musicTimer);
     window.removeEventListener("resize", this._handleResize);
-    this.removeEventListener("touchstart", this._handleTouchStart);
-    this.removeEventListener("touchend", this._handleTouchEnd);
+    this.removeEventListener("pointerdown", this._handlePointerDown);
+    this.removeEventListener("pointerup", this._handlePointerUp);
   }
 
   /**
@@ -171,38 +183,69 @@ export class AmbientScreensaverCard extends LitElement {
     );
   }
 
-  private _handleTouchStart = (e: TouchEvent): void => {
-    const touch = e.touches[0];
-    if (!touch) return;
-    this._touchStartX = touch.clientX;
-    this._touchStartY = touch.clientY;
-    this._touchStartTime = Date.now();
+  private _handlePointerDown = (e: PointerEvent): void => {
+    this._pointerStartX = e.clientX;
+    this._pointerStartY = e.clientY;
+    this._pointerStartTime = Date.now();
+    this._pointerStartTarget = e.target;
   };
 
-  private _handleTouchEnd = (e: TouchEvent): void => {
-    if (this._isNightMode) return;
+  private _handlePointerUp = (e: PointerEvent): void => {
+    if (this._isInteractiveTarget(this._pointerStartTarget, e)) return;
 
-    const touch = e.changedTouches[0];
-    if (!touch) return;
-
-    const deltaX = this._touchStartX - touch.clientX;
-    const deltaY = this._touchStartY - touch.clientY;
-    const deltaTime = Math.max(1, Date.now() - this._touchStartTime);
+    const deltaX = this._pointerStartX - e.clientX;
+    const deltaY = this._pointerStartY - e.clientY;
+    const deltaTime = Math.max(1, Date.now() - this._pointerStartTime);
     const velocityX = Math.abs(deltaX) / deltaTime;
 
     const isHorizontalSwipe =
       Math.abs(deltaX) > Math.abs(deltaY) &&
       Math.abs(deltaX) > SWIPE_MIN_DISTANCE &&
       velocityX > SWIPE_MIN_VELOCITY;
-    if (!isHorizontalSwipe) return;
-
-    if (deltaX > 0) {
-      this._showPrevious();
-    } else {
-      void this._showNext();
+    if (isHorizontalSwipe) {
+      if (this._isNightMode || this._music) return;
+      if (deltaX > 0) {
+        this._showPrevious();
+      } else {
+        void this._showNext();
+      }
+      this._restartRotationTimer();
+      return;
     }
-    this._restartRotationTimer();
+
+    if (Math.abs(deltaX) < SWIPE_MIN_DISTANCE && Math.abs(deltaY) < SWIPE_MIN_DISTANCE) {
+      this._navigateFromTap();
+    }
   };
+
+  private _isInteractiveTarget(
+    startTarget: EventTarget | null,
+    event: Event
+  ): boolean {
+    const path = event.composedPath();
+    if (startTarget) path.push(startTarget);
+    return path.some(
+      (target) =>
+        target instanceof Element &&
+        Boolean(target.closest("button, input, select, textarea, [data-interactive]"))
+    );
+  }
+
+  private _navigateFromTap(): void {
+    const path = this._config?.tap_navigation_path?.trim();
+    if (!path || !this.hass) return;
+
+    const hassWithNavigate = this.hass as HomeAssistant & {
+      navigate?: (navigationPath: string) => void;
+    };
+    if (typeof hassWithNavigate.navigate === "function") {
+      hassWithNavigate.navigate(path);
+      return;
+    }
+
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
 
   protected updated(changed: PropertyValues): void {
     super.updated(changed);
@@ -228,6 +271,72 @@ export class AmbientScreensaverCard extends LitElement {
         void this._handleNightModeChange(nextNightMode);
       }
     }
+
+    if (changed.has("hass") && this.hass && this._config) {
+      void this._resolveMusicFallback();
+      this._updateMusicState();
+    }
+  }
+
+  private _updateMusicState(): void {
+    const nextMusic = getMusicDisplay(
+      this.hass,
+      this._config?.music_assistant_player
+    );
+    const wasActive = Boolean(this._music);
+    this._music = nextMusic;
+    const isActive = Boolean(nextMusic);
+
+    if (isActive && !wasActive) {
+      if (this._rotationTimer) {
+        clearInterval(this._rotationTimer);
+        this._rotationTimer = undefined;
+      }
+      this._startMusicTimer();
+    } else if (!isActive && wasActive) {
+      this._stopMusicTimer();
+      if (!this._isNightMode) this._restartRotationTimer();
+    }
+  }
+
+  private _startMusicTimer(): void {
+    this._stopMusicTimer();
+    this._musicTimer = setInterval(() => {
+      this._updateMusicState();
+    }, 1000);
+  }
+
+  private _stopMusicTimer(): void {
+    if (this._musicTimer) clearInterval(this._musicTimer);
+    this._musicTimer = undefined;
+  }
+
+  private async _resolveMusicFallback(): Promise<void> {
+    const source = this._config?.music_assistant_fallback_image;
+    const request = ++this._fallbackRequest;
+    if (!source) {
+      this._musicFallbackUrl = "";
+      this._resolvedFallbackSource = "";
+      return;
+    }
+    if (source === this._resolvedFallbackSource) return;
+    if (source.startsWith("media-source://") && !this.hass) return;
+
+    try {
+      const url = source.startsWith("media-source://")
+        ? (await resolveMedia(this.hass, source)).url
+        : source;
+      if (request === this._fallbackRequest) {
+        this._musicFallbackUrl = url;
+        this._resolvedFallbackSource = source;
+      }
+    } catch (err) {
+      console.warn(
+        "[ambient-screensaver-card] Failed to resolve music fallback image:",
+        err
+      );
+      if (request === this._fallbackRequest) this._musicFallbackUrl = "";
+    }
   }
 
   private async _handleNightModeChange(active: boolean): Promise<void> {
@@ -237,7 +346,7 @@ export class AmbientScreensaverCard extends LitElement {
         this._rotationTimer = undefined;
       }
     } else {
-      this._restartRotationTimer();
+      if (!this._music) this._restartRotationTimer();
     }
     await this._setBrightness(active);
   }
@@ -370,6 +479,11 @@ export class AmbientScreensaverCard extends LitElement {
       "--asc-text-shadow",
       c.text_shadow ?? defaultConfig.text_shadow
     );
+    const clockOpacity = Math.min(
+      100,
+      Math.max(0, Number(c.night_mode_clock_opacity ?? 10))
+    );
+    this.style.setProperty("--asc-night-clock-opacity", `${clockOpacity / 100}`);
   }
 
   protected render() {
@@ -394,6 +508,10 @@ export class AmbientScreensaverCard extends LitElement {
 
     if (this._isNightMode) {
       return this._renderNightMode();
+    }
+
+    if (this._music) {
+      return this._renderMusic();
     }
 
     const weather = getWeatherDisplay(this.hass, this._config);
@@ -465,6 +583,106 @@ export class AmbientScreensaverCard extends LitElement {
       ${this._renderDebugOverlay()}
     `;
   }
+
+  private _renderMusic() {
+    const music = this._music;
+    if (!music) return nothing;
+    const albumArt = music.albumArtUrl ?? this._musicFallbackUrl;
+    const progress = music.durationSeconds
+      ? (music.positionSeconds / music.durationSeconds) * 100
+      : 0;
+
+    return html`
+      <div
+        class="music-view"
+        style=${styleMap({ "--asc-music-art": albumArt ? `url("${albumArt}")` : "none" })}
+      >
+        <div class="music-background"></div>
+        <div class="music-scrim"></div>
+        <div class="music-content">
+          ${albumArt
+            ? html`<img class="music-cover" src=${albumArt} alt="Album cover" />`
+            : html`<div class="music-cover music-cover-empty"></div>`}
+          <div class="music-details">
+            <div class="music-title">${music.title}</div>
+            ${music.artist
+              ? html`<div class="music-artist">${music.artist}</div>`
+              : nothing}
+            ${music.album
+              ? html`<div class="music-album">${music.album}</div>`
+              : nothing}
+          </div>
+          <div class="music-controls" data-interactive>
+            <button
+              class="music-button"
+              aria-label=${music.state === "playing" ? "Pause" : "Play"}
+              @click=${this._toggleMusic}
+            >
+              <ha-icon
+                icon=${music.state === "playing" ? "mdi:pause" : "mdi:play"}
+              ></ha-icon>
+            </button>
+            <button
+              class="music-button"
+              aria-label="Next track"
+              @click=${this._nextMusic}
+            >
+              <ha-icon icon="mdi:skip-next"></ha-icon>
+            </button>
+          </div>
+          <input
+            class="music-progress"
+            data-interactive
+            type="range"
+            min="0"
+            max=${music.durationSeconds || 1}
+            step="1"
+            .value=${String(music.positionSeconds)}
+            style=${styleMap({ "--asc-music-progress": `${progress}%` })}
+            aria-label="Track progress"
+            @input=${this._seekMusic}
+          />
+        </div>
+      </div>
+    `;
+  }
+
+  private _stopInteraction = (event: Event): void => {
+    event.stopPropagation();
+  };
+
+  private _toggleMusic = (event: Event): void => {
+    this._stopInteraction(event);
+    const entityId = this._config?.music_assistant_player;
+    if (!entityId) return;
+    void this.hass.callService("media_player", "media_play_pause", {
+      entity_id: entityId,
+    });
+  };
+
+  private _nextMusic = (event: Event): void => {
+    this._stopInteraction(event);
+    const entityId = this._config?.music_assistant_player;
+    if (!entityId) return;
+    void this.hass.callService("media_player", "media_next_track", {
+      entity_id: entityId,
+    });
+  };
+
+  private _seekMusic = (event: Event): void => {
+    this._stopInteraction(event);
+    const input = event.currentTarget as HTMLInputElement;
+    const entityId = this._config?.music_assistant_player;
+    if (!entityId || !this._music || !this._music.durationSeconds) return;
+    const seekPosition = Math.min(
+      this._music.durationSeconds,
+      Math.max(0, Number(input.value))
+    );
+    void this.hass.callService("media_player", "media_seek", {
+      entity_id: entityId,
+      seek_position: seekPosition,
+    });
+  };
 
   private _renderDebugOverlay() {
     if (!this._config?.debug) return nothing;

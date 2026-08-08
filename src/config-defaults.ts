@@ -8,10 +8,22 @@ import type { AmbientScreensaverCardConfig } from "./types";
 export const defaultConfig: Required<
   Omit<
     AmbientScreensaverCardConfig,
-    "type" | "immich_album_id" | "brightness_entity"
+    | "type"
+    | "immich_album_id"
+    | "brightness_entity"
+    | "music_assistant_player"
+    | "music_assistant_fallback_image"
+    | "tap_navigation_path"
   >
 > &
-  Pick<AmbientScreensaverCardConfig, "immich_album_id" | "brightness_entity"> = {
+  Pick<
+    AmbientScreensaverCardConfig,
+    | "immich_album_id"
+    | "brightness_entity"
+    | "music_assistant_player"
+    | "music_assistant_fallback_image"
+    | "tap_navigation_path"
+  > = {
   media_mode: "local",
   local_media_path: "media-source://media_source/local/screensaver",
   immich_album_id: undefined,
@@ -25,6 +37,9 @@ export const defaultConfig: Required<
 
   display_time: 30,
   crossfade_time: 2,
+
+  music_assistant_player: undefined,
+  music_assistant_fallback_image: undefined,
 
   weather_entity: "weather.home",
   outdoor_temp_entity: "sensor.laverton_temp",
@@ -52,6 +67,9 @@ export const defaultConfig: Required<
 
   night_mode_light_sensor_entity: "sensor.room_light_sensor",
   night_mode_light_threshold: 10,
+  night_mode_clock_opacity: 10,
+
+  tap_navigation_path: undefined,
 
   brightness_entity: undefined,
   brightness_day_default: 100,

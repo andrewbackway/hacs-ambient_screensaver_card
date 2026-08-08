@@ -94,6 +94,16 @@ const SCHEMA: SchemaEntry[] = [
   {
     name: "",
     type: "expandable",
+    title: "Music Assistant",
+    flatten: true,
+    schema: [
+      { name: "music_assistant_player", selector: { entity: { domain: "media_player" } } },
+      { name: "music_assistant_fallback_image", selector: { text: {} } },
+    ],
+  },
+  {
+    name: "",
+    type: "expandable",
     title: "Outdoor weather",
     flatten: true,
     schema: [
@@ -163,7 +173,15 @@ const SCHEMA: SchemaEntry[] = [
     schema: [
       { name: "night_mode_light_sensor_entity", selector: { entity: { domain: "sensor" } } },
       { name: "night_mode_light_threshold", selector: { number: { mode: "box" } } },
+      { name: "night_mode_clock_opacity", selector: { number: { mode: "slider", min: 0, max: 100, step: 1, unit_of_measurement: "%" } } },
     ],
+  },
+  {
+    name: "",
+    type: "expandable",
+    title: "Navigation",
+    flatten: true,
+    schema: [{ name: "tap_navigation_path", selector: { text: {} } }],
   },
   {
     name: "",
@@ -195,6 +213,8 @@ const LABELS: Record<string, string> = {
   image_fit: "Image fit",
   display_time: "Display time per photo",
   crossfade_time: "Crossfade duration",
+  music_assistant_player: "Music Assistant player",
+  music_assistant_fallback_image: "Music fallback image (URL, /local, or media-source)",
   weather_entity: "Weather entity",
   outdoor_temp_entity: "Outdoor temperature entity",
   outdoor_high_entity: "Outdoor high temperature entity",
@@ -216,6 +236,8 @@ const LABELS: Record<string, string> = {
   idle_black_after: "Idle time before fading to black",
   night_mode_light_sensor_entity: "Night mode light sensor",
   night_mode_light_threshold: "Night mode threshold (state \u2264 this = night)",
+  night_mode_clock_opacity: "Night clock opacity",
+  tap_navigation_path: "Tap navigation path",
   brightness_entity: "Screen brightness entity (number.*)",
   brightness_day_default: "Day brightness fallback",
   debug: "Show debug overlay",

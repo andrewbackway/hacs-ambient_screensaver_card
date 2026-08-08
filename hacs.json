@@ -1,6 +1,6 @@
 {
   "name": "Ambient Screensaver Card",
   "render_readme": true,
-  "filename": "ambient-screensaver-card.js",
+  "filename": "dist/ambient-screensaver-card.js",
   "content_in_root": false
 }

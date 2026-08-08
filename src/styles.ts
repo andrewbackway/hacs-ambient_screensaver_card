@@ -148,12 +148,191 @@ export const styles = css`
     font-size: clamp(6rem, 20vw, 14rem);
     font-weight: 500;
     line-height: 1;
+    opacity: var(--asc-night-clock-opacity, 0.1);
     text-shadow: var(--asc-text-shadow, 0px 2px 12px rgba(0, 0, 0, 0.9));
   }
 
   .night-clock-ampm {
     font-size: 0.3em;
     margin-left: 0.1em;
+  }
+
+  .music-view {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    color: #fff;
+    background: #111;
+  }
+
+  .music-background,
+  .music-scrim {
+    position: absolute;
+    inset: -32px;
+  }
+
+  .music-background {
+    background-image: var(--asc-music-art, none);
+    background-position: center;
+    background-size: cover;
+    filter: blur(28px);
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+
+  .music-scrim {
+    background: rgba(0, 0, 0, 0.58);
+  }
+
+  .music-content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(180px, 34vw) minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto;
+    align-items: end;
+    gap: 1.5rem 3vw;
+    width: min(1100px, 86vw);
+    height: 100%;
+    margin: 0 auto;
+    padding: 7vh 0 8vh;
+    box-sizing: border-box;
+  }
+
+  .music-cover {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .music-cover-empty {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .music-details {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    min-width: 0;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+  }
+
+  .music-title {
+    font-size: clamp(2rem, 5vw, 5rem);
+    font-weight: 600;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .music-artist {
+    margin-top: 0.5rem;
+    font-size: clamp(1.2rem, 2.5vw, 2.25rem);
+  }
+
+  .music-album {
+    margin-top: 0.25rem;
+    font-size: clamp(0.9rem, 1.5vw, 1.25rem);
+    opacity: 0.78;
+  }
+
+  .music-controls {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .music-button {
+    display: inline-grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.38);
+    cursor: pointer;
+  }
+
+  .music-button:hover,
+  .music-button:focus-visible {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .music-button ha-icon {
+    --mdc-icon-size: 1.7rem;
+  }
+
+  .music-progress {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+    height: 1.25rem;
+    margin: 0;
+    appearance: none;
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+    background: linear-gradient(
+      to right,
+      #fff var(--asc-music-progress, 0%),
+      rgba(255, 255, 255, 0.3) var(--asc-music-progress, 0%)
+    );
+  }
+
+  .music-progress::-webkit-slider-thumb {
+    width: 0.9rem;
+    height: 0.9rem;
+    appearance: none;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .music-progress::-moz-range-thumb {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  @media (max-width: 600px) {
+    .music-content {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(0, 1fr) auto auto auto;
+      gap: 1rem;
+      width: 84vw;
+      padding: 7vh 0 6vh;
+    }
+
+    .music-cover {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: center;
+      justify-self: center;
+      width: min(62vw, 340px);
+    }
+
+    .music-details {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .music-controls {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .music-progress {
+      grid-column: 1;
+      grid-row: 4;
+    }
   }
 
   .debug-overlay {

@@ -6,9 +6,6 @@ weather / room-temperature overlay (bottom-left) plus a location / subtitle
 overlay (bottom-right). No card container, no Home Assistant chrome — just
 white text with a heavy shadow directly on the photo.
 
-See [`custom-card-plan.md`](../custom-card-plan.md) in the parent folder for
-the full architecture/design plan this card was built from.
-
 ## Features
 
 - Fully self-contained — no WallPanel or other dashboard-level dependency.
@@ -29,8 +26,12 @@ the full architecture/design plan this card was built from.
   entity + literal default.
 - Location title and per-photo subtitle (static text, or driven from Immich
   photo metadata/EXIF — date and city/state/country — in either Immich mode).
-- Burn-in protection: slow periodic pixel-shift of the overlay, night-time
-  dimming (via `sun.sun` or a fixed hour window), and idle fade-to-black.
+- Burn-in protection: slow periodic pixel-shift of the overlay, sensor-driven
+   night mode with a configurable low-opacity clock and optional display
+   brightness control, and idle fade-to-black.
+- Music Assistant playback panel: fullscreen album art, artist/title metadata,
+   play/pause and next controls, and tap-or-drag track seeking from a configured
+   Home Assistant `media_player.*` entity.
 - Full visual (GUI) configuration editor, including a dedicated repeatable
   list editor for Immich profiles — no YAML required, though YAML is still
   fully supported.
@@ -52,7 +53,7 @@ already be pushed to GitHub with at least one tagged release.
    Dashboard-category repos; if the card doesn't show up as an option when
    adding a card, add it manually:
    - **Settings → Dashboards → ⋮ → Resources → + Add Resource**
-   - URL: `/hacsfiles/ambient-screensaver-card/ambient-screensaver-card.js`
+   - URL: `/hacsfiles/ambient-screensaver-card/dist/ambient-screensaver-card.js`
    - Resource type: **JavaScript Module**
 5. **Reload the dashboard** (hard refresh the browser) so the new resource
    loads.
@@ -77,7 +78,8 @@ npm run watch
 
 Copy/symlink `dist/ambient-screensaver-card.js` into
 `/config/www/community/ambient-screensaver-card/` on your HA instance, add it
-once as a Lovelace resource (`/local/community/ambient-screensaver-card/ambient-screensaver-card.js`,
+once as a Lovelace resource
+(`/local/community/ambient-screensaver-card/dist/ambient-screensaver-card.js`,
 type: JavaScript Module), then hard-refresh the dashboard after each rebuild.
 
 ## Immich direct API mode
@@ -135,6 +137,8 @@ below through HA's standard form UI, or set them directly in YAML:
 | `image_fit` | `cover` or `contain` | `cover` |
 | `display_time` | seconds per photo | `30` |
 | `crossfade_time` | seconds for the crossfade | `2` |
+| `music_assistant_player` | Music Assistant-backed `media_player.*` entity; playing or paused state activates the fullscreen music panel | — |
+| `music_assistant_fallback_image` | Album-art fallback as a URL, `/local/...` path, or `media-source://` content ID | — |
 | `weather_entity` | weather entity for the condition icon | `weather.home` |
 | `outdoor_temp_entity` / `outdoor_high_entity` | outdoor temperature and high entities; the weather row is hidden if either value is unavailable or invalid | `sensor.laverton_temp` / `sensor.laverton_temp_max` |
 | `room_temp_entity` | room temperature entity; the room row is hidden if the value is unavailable or invalid | `sensor.office_temperature` |
@@ -146,12 +150,48 @@ below through HA's standard form UI, or set them directly in YAML:
 | `pixel_shift_distance` / `pixel_shift_period` | burn-in pixel-shift amount (px) / period (s) | `6` / `60` |
 | `night_mode_light_sensor_entity` | numeric light-level sensor entity; night mode is active while its state is `<=` `night_mode_light_threshold` | `sensor.room_light_sensor` |
 | `night_mode_light_threshold` | night-mode trigger threshold (see above) | `10` |
+| `night_mode_clock_opacity` | full-screen night clock opacity, expressed as a percentage from `0` to `100` | `10` |
 | `brightness_entity` | `number.*` entity for the display's real backlight brightness — set to `0` on entering night mode and restored on exit. Left unset to disable real brightness control entirely | — |
 | `brightness_day_default` | fallback brightness value to restore if no previous value was captured before night mode started | `100` |
 | `debug` | show an on-screen diagnostic overlay (night mode/brightness/media/idle/screen-size state) | `false` |
 | `idle_time` / `idle_black_after` | seconds of inactivity before dimming / fading to black | `120` / `600` |
+| `tap_navigation_path` | relative Home Assistant dashboard/view path, such as `/lovelace/ambient`; unset means no navigation | — |
+
+### Music Assistant example
+
+Configure the Home Assistant `media_player.*` entity created for your Music
+Assistant player. The card shows the fullscreen music panel while that entity
+is `playing` or `paused`:
+
+```yaml
+type: custom:ambient-screensaver-card
+music_assistant_player: media_player.living_room
+music_assistant_fallback_image: media-source://media_source/local/screensaver/music-fallback.jpg
+night_mode_clock_opacity: 10
+tap_navigation_path: /lovelace/ambient
+```
+
+Album art is read from the entity's `entity_picture` attribute. The fallback
+source accepts a browser URL, an HA `/local/...` path, or a
+`media-source://` content ID. The progress bar supports both direct seeking
+and dragging. Night mode takes precedence over music mode.
 
 ## Interaction
 
 - **Swipe left** anywhere on the screen shows the **previous** photo; **swipe right** shows the **next** photo (skips ahead of the normal rotation timer, which restarts fresh after a manual swipe). Ignored while night mode is active.
 - **Night mode** activates automatically once `night_mode_light_sensor_entity`'s state drops to/below `night_mode_light_threshold` (e.g. a room going dark) — photos and all overlay text/weather/room-temp info are hidden, replaced by a large centered clock only, and (if `brightness_entity` is configured) the real screen brightness is set to `0`. It deactivates automatically once the sensor reports a brighter level again, restoring the previous brightness. There is no manual/gesture override — it is purely sensor-driven.
+- **Music mode** takes over the full screen when the configured Music Assistant player is playing or paused. It shows blurred cover art behind the album cover, artist, title, play/pause and next controls, and a thin progress control that supports both tapping and dragging to seek. The photo rotation is paused while music mode is active and resumes with a fresh interval afterward. Night mode always takes precedence over music mode.
+- **Tap navigation** opens `tap_navigation_path` when the screen is tapped outside buttons or controls. It is disabled by default. Taps on the night-mode clock also navigate when configured; swipes continue to perform photo navigation and never open the dashboard.
+
+## HACS deployment
+
+The repository keeps the browser bundle at `dist/ambient-screensaver-card.js`, matching `hacs.json`. For a release:
+
+1. Run `npm ci` and `npm run lint`.
+2. Run `npm run build` and confirm `dist/ambient-screensaver-card.js` is regenerated.
+3. Commit the source and `dist/` bundle, then create a Git tag and GitHub release.
+4. HACS installs the release into `/hacsfiles/ambient-screensaver-card/`; add the resource URL below if HACS does not register it automatically:
+
+   `/hacsfiles/ambient-screensaver-card/dist/ambient-screensaver-card.js`
+
+The resource type is **JavaScript Module**. After installation or an update, hard-refresh the Home Assistant dashboard so the browser does not use an older cached bundle.
