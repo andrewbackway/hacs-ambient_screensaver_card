@@ -437,7 +437,7 @@ export class AmbientScreensaverCard extends LitElement {
             : nothing}
           ${room
             ? html`<div class="room-row">
-                ${room.label}: ${Math.round(room.temp)}${room.unit}
+                ${room.label} - ${Math.round(room.temp)}${room.unit}
               </div>`
             : nothing}
         </div>
